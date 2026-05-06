@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Пътят към безкрайния син хоризонт — игра</title>
+  <style>
+    :root {
+      --sea-dark: #064663;
+      --sea: #0a9396;
+      --sea-light: #94d2bd;
+      --sand: #f6d7a7;
+      --white: #ffffff;
+      --ink: #12343b;
+      --correct: #2a9d8f;
+      --wrong: #e76f51;
+      --card: rgba(255, 255, 255, 0.9);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 12%, rgba(255,255,255,0.65), transparent 10%),
+        radial-gradient(circle at 85% 20%, rgba(255,255,255,0.35), transparent 12%),
+        linear-gradient(180deg, #0b7285 0%, #0a9396 45%, #94d2bd 75%, #f6d7a7 100%);
+      overflow-x: hidden;
+    }
+
+    .bubbles span {
+      position: fixed;
+      bottom: -80px;
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(255,255,255,0.55);
+      border-radius: 50%;
+      animation: floatUp 12s linear infinite;
+      z-index: 0;
+    }
+
+    .bubbles span:nth-child(1) { left: 8%; animation-delay: 0s; width: 18px; height: 18px; }
+    .bubbles span:nth-child(2) { left: 22%; animation-delay: 3s; width: 30px; height: 30px; }
+    .bubbles span:nth-child(3) { left: 42%; animation-delay: 1.5s; width: 16px; height: 16px; }
+    .bubbles span:nth-child(4) { left: 64%; animation-delay: 5s; width: 26px; height: 26px; }
+    .bubbles span:nth-child(5) { left: 82%; animation-delay: 2.2s; width: 20px; height: 20px; }
+    .bubbles span:nth-child(6) { left: 92%; animation-delay: 6s; width: 34px; height: 34px; }
+
+    @keyframes floatUp {
+      from { transform: translateY(0) scale(1); opacity: 0; }
+      15% { opacity: 1; }
+      to { transform: translateY(-115vh) scale(1.25); opacity: 0; }
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 28px 16px 36px;
+    }
+
+    header {
+      text-align: center;
+      color: var(--white);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.7rem);
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      margin: 10px auto 0;
+      max-width: 740px;
+      font-size: 1.1rem;
+      line-height: 1.45;
+    }
+
+    .game-card {
+      background: var(--card);
+      border-radius: 26px;
+      padding: 22px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+      border: 2px solid rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+    }
+
+    .top-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      background: #e9f7f5;
+      color: var(--sea-dark);
+      border: 1px solid rgba(10,147,150,0.25);
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-weight: 700;
+    }
+
+    .progress {
+      flex: 1;
+      min-width: 210px;
+      height: 16px;
+      border-radius: 999px;
+      background: rgba(6,70,99,0.16);
+      overflow: hidden;
+      border: 1px solid rgba(6,70,99,0.12);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--sea), var(--sea-light));
+      transition: width 0.35s ease;
+    }
+
+    .question {
+      font-size: clamp(1.25rem, 3vw, 1.65rem);
+      font-weight: 800;
+      margin: 12px 0 18px;
+      line-height: 1.35;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    button.answer {
+      cursor: pointer;
+      border: 2px solid rgba(6,70,99,0.15);
+      background: #ffffff;
+      color: var(--ink);
+      border-radius: 18px;
+      padding: 15px 16px;
+      font-size: 1rem;
+      text-align: left;
+      line-height: 1.35;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    button.answer:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(6,70,99,0.16);
+      border-color: var(--sea);
+    }
+
+    button.answer:disabled { cursor: not-allowed; opacity: 0.92; }
+    button.answer.correct { border-color: var(--correct); background: #dff6f0; }
+    button.answer.wrong { border-color: var(--wrong); background: #ffe4dc; }
+
+    .feedback {
+      min-height: 42px;
+      margin: 18px 0 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .feedback.good { color: #0f766e; }
+    .feedback.bad { color: #c2410c; }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .main-btn {
+      cursor: pointer;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-weight: 800;
+      font-size: 1rem;
+      color: white;
+      background: linear-gradient(135deg, #087f8c, #0a9396);
+      box-shadow: 0 8px 18px rgba(8,127,140,0.28);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .main-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(8,127,140,0.35); }
+    .main-btn.secondary { background: linear-gradient(135deg, #6c757d, #495057); }
+    .main-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .result {
+      text-align: center;
+      padding: 18px 8px;
+    }
+
+    .result .emoji { font-size: 4rem; margin-bottom: 8px; }
+    .result h2 { font-size: 2.2rem; margin: 8px 0; color: var(--sea-dark); }
+    .result p { font-size: 1.14rem; line-height: 1.5; max-width: 680px; margin: 10px auto; }
+
+    .hidden { display: none; }
+
+    .turtle {
+      font-size: 3.5rem;
+      display: inline-block;
+      animation: swim 3s ease-in-out infinite;
+      filter: drop-shadow(0 8px 8px rgba(0,0,0,0.18));
+    }
+
+    @keyframes swim {
+      0%, 100% { transform: translateX(-8px) rotate(-4deg); }
+      50% { transform: translateX(8px) rotate(4deg); }
+    }
+
+    @media (max-width: 720px) {
+      .answers { grid-template-columns: 1fr; }
+      .game-card { padding: 16px; border-radius: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bubbles" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <main class="wrap">
+    <header>
+      <div class="turtle" aria-hidden="true">🐢</div>
+      <h1>Пътят към безкрайния син хоризонт</h1>
+      <p class="subtitle">Образователна игра за 6. клас: прочети внимателно въпросите и помогни на костенурката Лола да стигне до океана!</p>
+    </header>
+
+    <section class="game-card" id="game">
+      <div class="top-row">
+        <div class="badge" id="questionCounter">Въпрос 1 от 15</div>
+        <div class="progress" aria-label="Напредък">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="badge" id="scoreBadge">Точки: 0</div>
+      </div>
+
+      <div class="question" id="questionText"></div>
+      <div class="answers" id="answers"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="actions">
+        <button class="main-btn" id="nextBtn" disabled>Следващ въпрос</button>
+      </div>
+    </section>
+
+    <section class="game-card result hidden" id="result">
+      <div class="emoji" id="resultEmoji">🌊</div>
+      <h2 id="resultTitle">Край на играта!</h2>
+      <p id="resultText"></p>
+      <div class="actions" style="justify-content:center;">
+        <button class="main-btn secondary" id="restartBtn">Играй отново</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        q: "Къде започва историята на костенурката Лола?",
+        options: ["В дълбока пещера", "На брега под лунна светлина", "В планинско езеро", "В гъста гора"],
+        answer: 1,
+        explain: "Историята започва на брега, под сребристата лунна светлина."
+      },
+      {
+        q: "Колко голяма е Лола, когато се появява от яйцето?",
+        options: ["Колкото човешки ръст", "Колкото голяма риба", "Колкото детска длан", "Колкото акула"],
+        answer: 2,
+        explain: "В текста е казано, че Лола е едва колкото детска длан."
+      },
+      {
+        q: "Какво трябва да достигне Лола веднага след излюпването си?",
+        options: ["Океана", "Планината", "Гнездото на птиците", "Реката в гората"],
+        answer: 0,
+        explain: "Малката костенурка трябва бързо да достигне до океана."
+      },
+      {
+        q: "С какво Лола се придвижва във водата?",
+        options: ["С крила", "С плавници", "С лапи като на куче", "С опашка като на риба"],
+        answer: 1,
+        explain: "Тя енергично маха с плавниците си."
+      },
+      {
+        q: "Кой жизнен процес е показан чрез махането с плавниците?",
+        options: ["Хранене", "Размножаване", "Движение", "Отделяне"],
+        answer: 2,
+        explain: "Махането с плавници е пример за движение."
+      },
+      {
+        q: "Защо Лола периодично изплува над повърхността?",
+        options: ["За да спи на слънце", "За да поеме въздух", "За да събира пясък", "За да търси птици"],
+        answer: 1,
+        explain: "Лола изплува, за да поеме глътка свеж въздух с дробовете си."
+      },
+      {
+        q: "Кой жизнен процес е свързан с поемането на въздух?",
+        options: ["Дишане", "Растеж", "Дразнимост", "Хранене"],
+        answer: 0,
+        explain: "Поемането на въздух е част от дишането."
+      },
+      {
+        q: "С какво се храни Лола според текста?",
+        options: ["Само с пясък", "С плодове и семена", "С водорасли и малки медузи", "С насекоми от брега"],
+        answer: 2,
+        explain: "Лола намира сочни водорасли и малки медузи."
+      },
+      {
+        q: "Какво получава Лола от храната си?",
+        options: ["Сили за дългия преход", "Нова черупка всеки ден", "Способност да лети", "Сребърна светлина"],
+        answer: 0,
+        explain: "Храната ѝ дава необходимите сили за дългия преход."
+      },
+      {
+        q: "Кой жизнен процес е описан с изхвърлянето на ненужното и вредното от тялото?",
+        options: ["Дишане", "Отделяне", "Размножаване", "Дразнимост"],
+        answer: 1,
+        explain: "Изхвърлянето на ненужни и вредни вещества е отделяне."
+      },
+      {
+        q: "Каква опасност среща Лола във водата?",
+        options: ["Голяма акула", "Снежна буря", "Пожар", "Сух пясък"],
+        answer: 0,
+        explain: "Над нея преминава сянката на голяма акула."
+      },
+      {
+        q: "Как реагира Лола при опасността?",
+        options: ["Запява силно", "Прибира главата си под черупката", "Излиза на дърво", "Заравя се в облак"],
+        answer: 1,
+        explain: "Тя мигновено прибира главата си под здравата черупка."
+      },
+      {
+        q: "Кой жизнен процес е показан чрез реакцията на Лола при опасност?",
+        options: ["Дразнимост", "Хранене", "Отделяне", "Растеж"],
+        answer: 0,
+        explain: "Реакцията на дразнител, например опасност, е дразнимост."
+      },
+      {
+        q: "Къде се завръща Лола години по-късно?",
+        options: ["На същия бряг, където се е родила", "В най-дълбоката част на океана", "В пустинята", "В аквариум"],
+        answer: 0,
+        explain: "Тя се връща на същия бряг, където се е родила."
+      },
+      {
+        q: "Кой жизнен процес е показан, когато Лола оставя яйца в пясъка?",
+        options: ["Движение", "Дишане", "Размножаване", "Отделяне"],
+        answer: 2,
+        explain: "Оставянето на яйца за следващото поколение е размножаване."
+      }
+    ];
+
+    let current = 0;
+    let score = 0;
+    let answered = false;
+
+    const questionCounter = document.getElementById("questionCounter");
+    const scoreBadge = document.getElementById("scoreBadge");
+    const progressBar = document.getElementById("progressBar");
+    const questionText = document.getElementById("questionText");
+    const answers = document.getElementById("answers");
+    const feedback = document.getElementById("feedback");
+    const nextBtn = document.getElementById("nextBtn");
+    const game = document.getElementById("game");
+    const result = document.getElementById("result");
+    const resultEmoji = document.getElementById("resultEmoji");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultText = document.getElementById("resultText");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function letter(index) {
+      return ["А", "Б", "В", "Д"][index];
+    }
+
+    function renderQuestion() {
+      answered = false;
+      const item = questions[current];
+      questionCounter.textContent = `Въпрос ${current + 1} от ${questions.length}`;
+      scoreBadge.textContent = `Точки: ${score}`;
+      progressBar.style.width = `${(current / questions.length) * 100}%`;
+      questionText.textContent = item.q;
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      nextBtn.disabled = true;
+      nextBtn.textContent = current === questions.length - 1 ? "Виж резултата" : "Следващ въпрос";
+      answers.innerHTML = "";
+
+      item.options.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.className = "answer";
+        btn.innerHTML = `<strong>${letter(index)}.</strong> ${option}`;
+        btn.addEventListener("click", () => chooseAnswer(index));
+        answers.appendChild(btn);
+      });
+    }
+
+    function chooseAnswer(index) {
+      if (answered) return;
+      answered = true;
+      const item = questions[current];
+      const buttons = document.querySelectorAll("button.answer");
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === item.answer) btn.classList.add("correct");
+        if (i === index && i !== item.answer) btn.classList.add("wrong");
+      });
+
+      if (index === item.answer) {
+        score++;
+        scoreBadge.textContent = `Точки: ${score}`;
+        feedback.textContent = `Вярно! ${item.explain}`;
+        feedback.classList.add("good");
+      } else {
+        feedback.textContent = `Не съвсем. Верният отговор е ${letter(item.answer)}. ${item.explain}`;
+        feedback.classList.add("bad");
+      }
+      nextBtn.disabled = false;
+    }
+
+    function showResult() {
+      progressBar.style.width = "100%";
+      game.classList.add("hidden");
+      result.classList.remove("hidden");
+
+      const percent = Math.round((score / questions.length) * 100);
+      let message;
+      if (score >= 13) {
+        resultEmoji.textContent = "🏆🐢";
+        resultTitle.textContent = "Отлично плаване!";
+        message = "Познаваш много добре историята на Лола и жизнените процеси при животните.";
+      } else if (score >= 10) {
+        resultEmoji.textContent = "🌊🐢";
+        resultTitle.textContent = "Много добър резултат!";
+        message = "Справи се чудесно. Преговори още веднъж въпросите за жизнените процеси.";
+      } else if (score >= 7) {
+        resultEmoji.textContent = "🐢💪";
+        resultTitle.textContent = "Добър опит!";
+        message = "Имаш добра основа, но можеш да подобриш резултата с още един прочит на текста.";
+      } else {
+        resultEmoji.textContent = "📖🐢";
+        resultTitle.textContent = "Нужен е още малко труд.";
+        message = "Прочети текста отново и обърни внимание на думите: движение, дишане, хранене, отделяне, дразнимост и размножаване.";
+      }
+
+      resultText.innerHTML = `Твоят резултат е <strong>${score} от ${questions.length}</strong> точки (${percent}%).<br>${message}`;
+    }
+
+    nextBtn.addEventListener("click", () => {
+      if (current < questions.length - 1) {
+        current++;
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      current = 0;
+      score = 0;
+      result.classList.add("hidden");
+      game.classList.remove("hidden");
+      renderQuestion();
+    });
+
+    renderQuestion();
+  </script>
+</body>
+</html>
